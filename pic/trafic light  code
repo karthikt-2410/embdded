@@ -1,0 +1,53 @@
+/*
+ * File:   main.c
+ * Author: KARTHI
+ *
+ * Created on 25 August, 2026, 3:45 PM
+ */
+
+
+
+
+
+#include <xc.h>
+
+// PIC16F877A Configuration
+#pragma config FOSC = HS
+#pragma config WDTE = OFF
+#pragma config PWRTE = ON
+#pragma config BOREN = ON
+#pragma config LVP = OFF
+#pragma config CPD = OFF
+#pragma config WRT = OFF
+#pragma config CP = OFF
+
+#define _XTAL_FREQ 20000000
+
+void main()
+{
+    TRISB = 0x00;       // PORTB as output
+    PORTB = 0x00;       // Initially OFF
+
+    while(1)
+    {
+        // ROAD 1 GREEN
+        // ROAD 2 RED
+        PORTB = 0x21;   // RB0 + RB5
+        __delay_ms(5000);
+
+        // ROAD 1 YELLOW
+        // ROAD 2 RED
+        PORTB = 0x11;   // RB0 + RB4
+        __delay_ms(2000);
+
+        // ROAD 1 RED
+        // ROAD 2 GREEN
+        PORTB = 0x0c;   // RB2 + RB3
+        __delay_ms(5000);
+
+        // ROAD 1 RED
+        // ROAD 2 YELLOW
+        PORTB = 0x0A;   // RB1 + RB3
+        __delay_ms(2000);
+    }
+}
