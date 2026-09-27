@@ -1,0 +1,128 @@
+#include <xc.h>
+
+#define _XTAL_FREQ 20000000
+
+// CONFIGURATION BITS
+#pragma config FOSC = HS
+#pragma config WDTE = OFF
+#pragma config PWRTE = OFF
+#pragma config BOREN = ON
+#pragma config LVP = OFF
+#pragma config CPD = OFF
+#pragma config WRT = OFF
+#pragma config CP = OFF
+
+
+// ================= UART =================
+
+void UART_Init(void)
+{
+    TRISC6 = 0;     // TX
+    TRISC7 = 1;     // RX
+
+    SPBRG = 129;    // 9600 baud @ 20 MHz
+    BRGH = 1;
+
+    SYNC = 0;
+    SPEN = 1;
+    TXEN = 1;
+    CREN = 1;
+}
+
+
+void UART_Write(char data)
+{
+    while(!TXIF);
+
+    TXREG = data;
+}
+
+
+void UART_Write_Text(const char *text)
+{
+    while(*text)
+    {
+        UART_Write(*text);
+        text++;
+    }
+}
+
+
+// Send integer number
+void UART_Write_Number(unsigned int number)
+{
+    if(number >= 1000)
+    {
+        UART_Write((number / 1000) + '0');
+        number = number % 1000;
+    }
+
+    if(number >= 100)
+    {
+        UART_Write((number / 100) + '0');
+        number = number % 100;
+    }
+
+    if(number >= 10)
+    {
+        UART_Write((number / 10) + '0');
+        number = number % 10;
+    }
+
+    UART_Write(number + '0');
+}
+
+
+// ================= ADC =================
+
+void ADC_Init(void)
+{
+    ADCON0 = 0x41;
+    ADCON1 = 0x8E;
+}
+
+
+unsigned int ADC_Read(void)
+{
+    __delay_us(20);
+
+    GO_nDONE = 1;
+
+    while(GO_nDONE);
+
+    return ((unsigned int)ADRESH << 8) | ADRESL;
+}
+
+
+// ================= MAIN =================
+
+void main(void)
+{
+    unsigned int adc_value;
+    unsigned int temperature;
+
+    ADC_Init();
+    UART_Init();
+
+    UART_Write_Text("\r\n");
+    UART_Write_Text("PIC16F877A Temperature Monitor\r\n");
+    UART_Write_Text("--------------------------------\r\n");
+
+    while(1)
+    {
+        adc_value = ADC_Read();
+
+        // LM35 calculation
+        // ADC voltage = ADC value * 5 / 1023
+        // LM35 = 10mV per degree Celsius
+        temperature = (adc_value * 500UL) / 1023UL;
+
+        UART_Write_Text("Temperature: ");
+
+        UART_Write_Number(temperature);
+
+        UART_Write_Text(" C\r\n");
+
+        __delay_ms(1000);
+    }
+}
